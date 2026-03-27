@@ -214,6 +214,53 @@ def delete_expense(expense_id: int) -> dict:
         return {"success": False, "error": str(e)}
 
 
+@mcp.tool
+def generate_test_data() -> dict:
+    """
+    Generate sample test data in the database.
+    
+    Populates the database with a variety of test expenses across different
+    categories to help with testing and demonstration purposes.
+    
+    Returns:
+        Success status with count of expenses added
+    """
+    try:
+        test_expenses = [
+            {"category": "food", "amount": 15.50, "description": "Lunch at cafe"},
+            {"category": "transport", "amount": 5.00, "description": "Bus fare"},
+            {"category": "food", "amount": 25.99, "description": "Dinner"},
+            {"category": "utilities", "amount": 45.00, "description": "Electricity bill"},
+            {"category": "entertainment", "amount": 20.00, "description": "Movie tickets"},
+            {"category": "groceries", "amount": 87.50, "description": "Weekly groceries"},
+            {"category": "transport", "amount": 12.00, "description": "Uber ride"},
+            {"category": "entertainment", "amount": 15.99, "description": "Concert ticket"},
+        ]
+        
+        added_count = 0
+        added_expenses = []
+        
+        for expense in test_expenses:
+            result = add_expense(**expense)
+            if result["success"]:
+                added_count += 1
+                added_expenses.append({
+                    "id": result["id"],
+                    "category": result["category"],
+                    "amount": result["amount"],
+                    "description": result["description"]
+                })
+        
+        return {
+            "success": True,
+            "count": added_count,
+            "message": f"Successfully generated {added_count} test expenses",
+            "expenses": added_expenses
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
 if __name__ == "__main__":
     init_db()
     mcp.run()

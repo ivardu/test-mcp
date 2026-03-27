@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "expense_tracker": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--with=fastmcp",
+        "python",
+        "D:\\Agentic AI\\Claude\\MCP\\main.py"
+      ],
+      "description": "Expense tracker MCP server with SQLite backend"
+    }
+  }
+}

@@ -8,9 +8,8 @@ from fastmcp import FastMCP
 # Initialize FastMCP server
 mcp = FastMCP(name='expense_tracker')
 
-# Database setup - use absolute path based on script location
-SCRIPT_DIR = Path(__file__).parent.absolute()
-DB_PATH = os.path.join(SCRIPT_DIR, 'expenses.db')
+# Database setup - use /tmp/ for cloud compatibility, or local path for development
+DB_PATH = os.getenv("DB_PATH", "/tmp/expenses.db")
 
 
 def init_db():

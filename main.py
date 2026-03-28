@@ -1,6 +1,7 @@
 import sqlite3
 import json
 import os
+import sys
 from datetime import datetime
 from pathlib import Path
 from fastmcp import FastMCP
@@ -8,28 +9,48 @@ from fastmcp import FastMCP
 # Initialize FastMCP server
 mcp = FastMCP(name='expense_tracker')
 
-# Database setup - use /tmp/ for cloud compatibility, or local path for development
+# Database setup - use /tmp/ for cloud deployment, fallback to local for development
 DB_PATH = os.getenv("DB_PATH", "/tmp/expenses.db")
+
+
+def ensure_directories():
+    """Ensure database directory exists."""
+    db_dir = os.path.dirname(DB_PATH)
+    if db_dir and not os.path.exists(db_dir):
+        try:
+            os.makedirs(db_dir, exist_ok=True)
+        except Exception as e:
+            print(f"Warning: Could not create database directory: {e}", file=sys.stderr)
 
 
 def init_db():
     """Initialize SQLite database with expenses table."""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS expenses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            category TEXT NOT NULL,
-            amount REAL NOT NULL,
-            description TEXT,
-            date TEXT NOT NULL,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    conn.commit()
-    conn.close()
+    try:
+        ensure_directories()
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        # Create expenses table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS expenses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                category TEXT NOT NULL,
+                amount REAL NOT NULL,
+                description TEXT,
+                date TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        conn.commit()
+        conn.close()
+        
+        print(f"✅ Database initialized successfully at {DB_PATH}", file=sys.stderr)
+        return True
+    except Exception as e:
+        print(f"❌ Failed to initialize database: {e}", file=sys.stderr)
+        return False
 
 
 @mcp.tool
@@ -48,6 +69,9 @@ def add_expense(category: str, amount: float, description: str = "", date: str =
     """
     if date is None:
         date = datetime.now().strftime('%Y-%m-%d')
+    
+    if amount <= 0:
+        return {"success": False, "error": "Amount must be greater than 0"}
     
     try:
         conn = sqlite3.connect(DB_PATH)
@@ -260,6 +284,11 @@ def generate_test_data() -> dict:
         return {"success": False, "error": str(e)}
 
 
+# ============================================================================
+# Initialize database on module startup (ensures schema is created for cloud)
+# ============================================================================
+init_db()
+
+
 if __name__ == "__main__":
-    init_db()
     mcp.run()
